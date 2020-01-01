@@ -1,9 +1,10 @@
 from btcpy.setup import setup
-from btcpy.structs.script import P2pkhScript, ScriptSig, StackData
-from btcpy.structs.sig import IfElseSolver, P2pkhSolver, Branch, Solver, RelativeTimelockSolver
+from btcpy.structs.script import P2pkhScript, ScriptSig
+from btcpy.structs.sig import IfElseSolver, P2pkhSolver, Branch, RelativeTimelockSolver
 from btcpy.structs.transaction import TransactionFactory
 from btcpy.structs.crypto import PublicKey, PrivateKey
-from btcpy.structs.transaction import TxIn, Sequence, TxOut, Locktime, MutableTransaction, Sighash
+from btcpy.structs.transaction import TxIn, Sequence, TxOut, Locktime, MutableTransaction
+from utils import *
 
 setup('testnet', strict=True)
 coin_symbol='btc-testnet'
@@ -18,14 +19,17 @@ privk = PrivateKey.unhexlify(privk_hex)
 # 输出脚本
 script = P2pkhScript(pubk)
 
-to_spend = TransactionFactory.unhexlify(
-    '02000000017c6fa51e352bf36709f71677a3da3d0c8849e60e1e1fc3084034fb6246cd2fb1000000006b483045022100c1d8516c7812bedfa8aa6342deac6f0794872d514df02578a5c919d0ca3cf24102200b3f376e7616c66d7d68a00b410941669a6b62b29cf07ab6424edbe001d3fd6f012102da815705edf454adf8cbbffe76550478219424c2e95d906708e17cd422297c31ffffffff02a0860100000000005b63aa2059d47d5565ce1e8df0772e5c00abdb31b8ca140017511a8afe6ba567fb27b79d8876a914a34e42492a174ef8fb4f3482d1c07cf19e1181e788ac6755b27576a914c444b5ac9f3a3a26b1f99b57107ebbdf50ca7e7788ac6800350c00000000001976a914a34e42492a174ef8fb4f3482d1c07cf19e1181e788ac00000000')
+to_spend_hash = "dae543cdd17e08908881cdcc1281e854576ed0dff3cdc835dfc1eb188628fbf8"
+to_spend_raw = get_raw_tx(to_spend_hash, coin_symbol)
+to_spend = TransactionFactory.unhexlify(to_spend_raw)
+penalty = int(float(to_spend.to_json()['vout'][0]['value']) * (10**8))
+
 unsigned = MutableTransaction(version=2,
                               ins=[TxIn(txid=to_spend.txid,
                                         txout=0,
                                         script_sig=ScriptSig.empty(),
                                         sequence=Sequence.max())],
-                              outs=[TxOut(value=10000,
+                              outs=[TxOut(value=penalty,
                                           n=0,
                                           script_pubkey=script)],
                               locktime=Locktime(0))

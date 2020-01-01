@@ -4,6 +4,7 @@ from btcpy.structs.sig import IfElseSolver, HashlockSolver, P2pkhSolver, Branch
 from btcpy.structs.transaction import TransactionFactory
 from btcpy.structs.crypto import PublicKey, PrivateKey
 from btcpy.structs.transaction import TxIn, Sequence, TxOut, Locktime, MutableTransaction
+from utils import *
 
 setup('testnet', strict=True)
 coin_symbol='btc-testnet'
@@ -25,14 +26,17 @@ if_solver = IfElseSolver(Branch.IF,  # branch selection
 script = P2pkhScript(pubk)
 
 # 创建交易
-to_spend = TransactionFactory.unhexlify(
-    '0200000001e0bcb851a6cda1a55754c705572b240412404c25f15fe5c1de3df2c0c62a879d000000006a47304402201794924b777483adf954b8b8def930e8c2d7bbf8c7e4fbd3bf8c8af4a402fe7802206c257e320450592d2579695b4808877a08f48b2c768d48541835b7d36cfb6be8012102da815705edf454adf8cbbffe76550478219424c2e95d906708e17cd422297c31ffffffff02a0860100000000005b63aa2059d47d5565ce1e8df0772e5c00abdb31b8ca140017511a8afe6ba567fb27b79d8876a914a34e42492a174ef8fb4f3482d1c07cf19e1181e788ac6755b27576a914c444b5ac9f3a3a26b1f99b57107ebbdf50ca7e7788ac6800350c00000000001976a914a34e42492a174ef8fb4f3482d1c07cf19e1181e788ac00000000')
+to_spend_hash = "45bb545f43df256fd41e0a6cbd9f63122ea3f3cc200f1aa4a68deff23edfbf0d"
+to_spend_raw = get_raw_tx(to_spend_hash, coin_symbol)
+to_spend = TransactionFactory.unhexlify(to_spend_raw)
+
+penalty = int(float(to_spend.to_json()['vout'][0]['value']) * (10**8))
 unsigned = MutableTransaction(version=2,
                               ins=[TxIn(txid=to_spend.txid,
                                         txout=0,
                                         script_sig=ScriptSig.empty(),
                                         sequence=Sequence.max())],
-                              outs=[TxOut(value=80000,
+                              outs=[TxOut(value=penalty,
                                           n=0,
                                           script_pubkey=script),
                                     ],
@@ -45,4 +49,4 @@ from blockcypher import pushtx
 
 msg = pushtx(coin_symbol=coin_symbol, api_key=api_key, tx_hex=signed.hexlify())
 
-print(msg)
+format_output(msg)

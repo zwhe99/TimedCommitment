@@ -29,6 +29,9 @@ secret = 'I have an apple'.encode()
 secret_hash = hashlib.sha256(hashlib.sha256(secret).digest()).digest()
 secret_hash = StackData.from_bytes(secret_hash)
 
+# sequence(lock_time)
+sequence = 5
+
 print("秘密经过sha256加密结果:", secret_hash)
 
 # 创建输出脚本
@@ -39,7 +42,7 @@ lock_time_script = IfElseScript(
                       P2pkhScript(pubk)),
     # else branch
     RelativeTimelockScript(  # timelocked script
-        Sequence(5),  # expiration, 5 blocks
+        Sequence(sequence),  # expiration, 5 blocks
         P2pkhScript(pubk2)
     )
 )
@@ -50,10 +53,16 @@ print("lock_time_script str: ", str(lock_time_script))
 change_script = P2pkhScript(pubk)
 
 # 开始创建交易
+print("sweeping fund...")
 to_spend_hash, balance = sweep_fund(privkey=privk_hex, address=str(address), coin_symbol=coin_symbol,
                                     api_key=api_key)
+print('estimating mining fee...')
+mining_fee_per_kb = get_mining_fee_per_kb(coin_symbol, api_key, condidence='high')
+estimated_tx_size = cal_tx_size_in_byte(1, 2)
+mining_fee = (mining_fee_per_kb * estimated_tx_size) * 1000
+
 penalty = 100000
-assert penalty <= balance, 'commiter账户余额不足'
+assert penalty + mining_fee <= balance, 'commiter账户余额不足'
 
 to_spend_raw = get_raw_tx(to_spend_hash, coin_symbol)
 to_spend = TransactionFactory.unhexlify(to_spend_raw)
@@ -66,7 +75,7 @@ unsigned = MutableTransaction(version=2,
                               outs=[TxOut(value=penalty,
                                           n=0,
                                           script_pubkey=lock_time_script),
-                                    TxOut(value=balance - penalty,
+                                    TxOut(value=balance - penalty - mining_fee,
                                           n=1,
                                           script_pubkey=change_script)],
                               locktime=Locktime(0))
@@ -76,6 +85,7 @@ solver = P2pkhSolver(privk)
 # 修改交易
 signed = unsigned.spend([to_spend.outs[0]], [solver])
 print('commit_tx_hex: ', signed.hexlify())
+
 # 发送交易
 from blockcypher import pushtx
 
