@@ -13,15 +13,15 @@ coin_symbol = 'btc-testnet'
 api_key = 'fe4a832ab7d14936b5731aa79cfa58ae'
 
 # committer
-pubk_hex = '02da815705edf454adf8cbbffe76550478219424c2e95d906708e17cd422297c31'
+pubk_hex = '03acb78908123c649e65d5e3689c3c53c25725c6eb53a6aa7834f73127c4eb2db1'
 pubk = PublicKey.unhexlify(pubk_hex)
 address = P2pkhAddress(pubk.hash())
 
-privk_hex = '83e5bdfd9522d198c068cb2a7be41bf74cec5a3b02d80f26688ba9dfb44cdb52'
+privk_hex = '24ee94da001fd72ff33b315659f808a3bcd963499086798b634c83258383891f'
 privk = PrivateKey.unhexlify(privk_hex)
 
 # recipient
-pubk_hex2 = '022ddaf15c9fb39f16ec5f15246bd50379541250f49a38207c8e8c4e50994c0a2e'
+pubk_hex2 = '024fa55e08d8fa261fd12060aa1f68357b1f284a93edfd922ddb7910170aa55dae'
 pubk2 = PublicKey.unhexlify(pubk_hex2)
 
 # a sample of secret
@@ -58,8 +58,8 @@ to_spend_hash, balance = sweep_fund(privkey=privk_hex, address=str(address), coi
                                     api_key=api_key)
 print('estimating mining fee...')
 mining_fee_per_kb = get_mining_fee_per_kb(coin_symbol, api_key, condidence='high')
-estimated_tx_size = cal_tx_size_in_byte(1, 2)
-mining_fee = (mining_fee_per_kb * estimated_tx_size) * 1000
+estimated_tx_size = cal_tx_size_in_byte(inputs_num=1, outputs_num=2)
+mining_fee = int(mining_fee_per_kb * (estimated_tx_size / 1000)) * 2
 
 penalty = 100000
 assert penalty + mining_fee <= balance, 'commiter账户余额不足'

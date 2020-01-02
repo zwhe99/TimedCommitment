@@ -1,8 +1,10 @@
+import requests
 from blockcypher import simple_spend
 from blockcypher import get_address_overview
 from blockcypher import get_transaction_details
 from blockcypher import get_blockchain_overview
 import json
+import re
 
 
 def format_output(data):
@@ -33,6 +35,7 @@ def sweep_fund(privkey, address, coin_symbol, api_key):
 
     tx = get_transaction_details(tx_hash, coin_symbol=coin_symbol)
     balance = tx['total']
+    print('balance:', balance)
     return tx_hash, balance
 
 
@@ -46,4 +49,14 @@ def get_raw_tx(tx_hash, coin_symbol):
     return tx['hex']
 
 
-print(get_mining_fee_per_kb('btc-testnet', 'fe4a832ab7d14936b5731aa79cfa58ae', 'low'))
+def boardcast_raw_tx(raw_tx):
+    raw_tx = raw_tx.strip()
+    if re.match('^[0-9A-Fa-f]+$', raw_tx, flags=0) is not None:
+        print('Boardcasting...')
+        data = {"jsonrpc": "1.0", "id": "1", "method": "sendrawtransaction", "params": [raw_tx]}
+        response = requests.post('https://api.bitaps.com/btc/testnet/native/', data=json.dumps(data))
+        response_content = json.loads(str(response.content, 'utf-8'))
+        return response_content
+
+    else:
+        return 'Invalid HEX format'

@@ -11,8 +11,8 @@ coin_symbol='btc-testnet'
 api_key = 'fe4a832ab7d14936b5731aa79cfa58ae'
 
 # commiter
-pubk_hex = '02da815705edf454adf8cbbffe76550478219424c2e95d906708e17cd422297c31'
-privk_hex = '83e5bdfd9522d198c068cb2a7be41bf74cec5a3b02d80f26688ba9dfb44cdb52'
+pubk_hex = '03acb78908123c649e65d5e3689c3c53c25725c6eb53a6aa7834f73127c4eb2db1'
+privk_hex = '24ee94da001fd72ff33b315659f808a3bcd963499086798b634c83258383891f'
 pubk = PublicKey.unhexlify(pubk_hex)
 privk = PrivateKey.unhexlify(privk_hex)
 
@@ -26,9 +26,14 @@ if_solver = IfElseSolver(Branch.IF,  # branch selection
 script = P2pkhScript(pubk)
 
 # 创建交易
-to_spend_hash = "45bb545f43df256fd41e0a6cbd9f63122ea3f3cc200f1aa4a68deff23edfbf0d"
+to_spend_hash = "798a9fff064defee2f023d3b4ace5c6bb089b2ab800da40b2c5c5b9ea90828b0"
 to_spend_raw = get_raw_tx(to_spend_hash, coin_symbol)
 to_spend = TransactionFactory.unhexlify(to_spend_raw)
+
+print('estimating mining fee...')
+mining_fee_per_kb = get_mining_fee_per_kb(coin_symbol, api_key, condidence='high')
+estimated_tx_size = cal_tx_size_in_byte(inputs_num=1, outputs_num=1)
+mining_fee = int(mining_fee_per_kb * (estimated_tx_size / 1000)) * 2
 
 penalty = int(float(to_spend.to_json()['vout'][0]['value']) * (10**8))
 unsigned = MutableTransaction(version=2,
@@ -36,7 +41,7 @@ unsigned = MutableTransaction(version=2,
                                         txout=0,
                                         script_sig=ScriptSig.empty(),
                                         sequence=Sequence.max())],
-                              outs=[TxOut(value=penalty,
+                              outs=[TxOut(value=penalty - mining_fee,
                                           n=0,
                                           script_pubkey=script),
                                     ],
@@ -44,6 +49,7 @@ unsigned = MutableTransaction(version=2,
 
 signed = unsigned.spend([to_spend.outs[0]], [if_solver])
 
+print('open_tx_hex: ', signed.hexlify())
 
 from blockcypher import pushtx
 
