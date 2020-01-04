@@ -8,6 +8,7 @@ from btcpy.structs.transaction import TxIn, Sequence, TxOut, Locktime, MutableTr
 from utils import *
 import hashlib
 
+# global
 setup('testnet', strict=True)
 coin_symbol = 'btc-testnet'
 api_key = 'fe4a832ab7d14936b5731aa79cfa58ae'
@@ -28,13 +29,13 @@ pubk2 = PublicKey.unhexlify(pubk_hex2)
 secret = 'I have an apple'.encode()
 secret_hash = hashlib.sha256(hashlib.sha256(secret).digest()).digest()
 secret_hash = StackData.from_bytes(secret_hash)
+print("秘密经hash256加密结果:", secret_hash)
 
 # sequence(lock_time)
 sequence = 5
 
-print("秘密经过sha256加密结果:", secret_hash)
-
 # 创建输出脚本
+
 # 定时脚本
 lock_time_script = IfElseScript(
     # if branch
@@ -52,18 +53,22 @@ print("lock_time_script str: ", str(lock_time_script))
 # 找零脚本
 change_script = P2pkhScript(pubk)
 
-# 开始创建交易
+# 清理资产
 print("sweeping fund...")
 to_spend_hash, balance = sweep_fund(privkey=privk_hex, address=str(address), coin_symbol=coin_symbol,
                                     api_key=api_key)
+
+# 估算挖矿费用
 print('estimating mining fee...')
 mining_fee_per_kb = get_mining_fee_per_kb(coin_symbol, api_key, condidence='high')
 estimated_tx_size = cal_tx_size_in_byte(inputs_num=1, outputs_num=2)
 mining_fee = int(mining_fee_per_kb * (estimated_tx_size / 1000)) * 2
 
+# 设置罚金
 penalty = 100000
-assert penalty + mining_fee <= balance, 'commiter账户余额不足'
+assert penalty + mining_fee <= balance, 'committer账户余额不足'
 
+# 创建交易
 to_spend_raw = get_raw_tx(to_spend_hash, coin_symbol)
 to_spend = TransactionFactory.unhexlify(to_spend_raw)
 
