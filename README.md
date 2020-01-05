@@ -290,7 +290,7 @@ The implementation of bitcoin-based timed-commitment scheme from "Secure Multipa
      ```python
      输出：
      pri_key d9e9d07e538cd27e4bfaa712c1e7893149670c10d27fc61471b11c7a4c918169
-     ub_key 03cfecd654690aaa8ab5ad5fb15818f44a3f341290f2ebf5e1c61ada78f8162844
+     pub_key 03cfecd654690aaa8ab5ad5fb15818f44a3f341290f2ebf5e1c61ada78f8162844
      address mfyex4qxDmFx4fX8uA9xyNV6tjQZVxbeoN   
      ```
      
