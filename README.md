@@ -320,7 +320,7 @@ The implementation of bitcoin-based timed-commitment scheme from "Secure Multipa
    
      将 raw transaction 复制到 https://tbtc.bitaps.com/broadcast，点击Broadcast。
    
-     ![image-20200102233144765](C:\Users\QJ\AppData\Roaming\Typora\typora-user-images\image-20200102233144765.png)
+     ![image-20200102233144765](https://github.com/Hbenmazi/TimedCommitment/blob/master/img/image-20200102233144765.png)
    
      
    
