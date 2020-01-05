@@ -396,7 +396,7 @@ The implementation of bitcoin-based timed-commitment scheme from "Secure Multipa
 
   在 https://tbtc.bitaps.com/ 上搜索交易的哈希，在[交易的详情页面](https://tbtc.bitaps.com/59ceb0cd9cb8a63ff8cc3a4c6979dcb29b2af81b267829035a5ac3d409c85e98)中点击 [Raw transaction](https://tbtc.bitaps.com/raw/transaction/59ceb0cd9cb8a63ff8cc3a4c6979dcb29b2af81b267829035a5ac3d409c85e98)。
 
-  ![image-20200104095730755](img\image-20200104095730755.png)
+  ![image-20200104095730755](/img/image-20200104095730755.png)
 
 * 使用 blockcypher 的get_transaction_detail 方法
 
