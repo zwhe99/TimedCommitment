@@ -52,7 +52,7 @@ The implementation of bitcoin-based timed-commitment scheme from "Secure Multipa
   
     * 具体的实施过程如图：
   
-      ![a8ea7cd1861db26ac5c2b4d4cdb1cf02_1_2_art](img/a8ea7cd1861db26ac5c2b4d4cdb1cf02_1_2_art.png)
+      ![a8ea7cd1861db26ac5c2b4d4cdb1cf02_1_2_art](/img/a8ea7cd1861db26ac5c2b4d4cdb1cf02_1_2_art.png)
       
     	* 关键点在于 $PayDeposit_{i}$ 交易的 **tlock**属性 。由于 **tlock**属性 的存在，$PayDeposit_{i}$ 在时间 $t$之前无法上链。值得注意的是， $PayDeposit_{i}$ 由承诺方构造，并且是需要承诺方 C 和接收方 $P_{i}$ 共同签名的多方签名交易。也就是说，由承诺方设定 **tlock** = $t$ 的条件，并且他自己签名表示同意。待时间满足 **tlock**属性的条件后，接收方 $P_{i}$ 签名，并广播 $PayDeposit_{i}$ 即可获得押金。
     	
@@ -321,7 +321,7 @@ The implementation of bitcoin-based timed-commitment scheme from "Secure Multipa
    
      将 raw transaction 复制到 https://tbtc.bitaps.com/broadcast，点击Broadcast。
    
-     ![image-20200102233144765](\img\image-20200102233144765.png)
+     ![image-20200102233144765](img/image-20200102233144765.png)
    
      
    
