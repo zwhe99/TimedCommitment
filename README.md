@@ -463,8 +463,8 @@ print(tx.to_json())
 
 总所周知，一个比特币地址的余额是由比特币网络中所有指向该地址的UTXO(Unspent Transaction Output)之和决定的。例如，以下比特币地址的资产等于四个交易输出之和：
 
-![image-20200103115445357](C:\Users\QJ\AppData\Roaming\Typora\typora-user-images\image-20200103115445357.png) 
-![image-20200103115532968](C:\Users\QJ\AppData\Roaming\Typora\typora-user-images\image-20200103115532968.png)
+![image-20200103115445357](img/image-20200103115254701.png) 
+![image-20200103115532968](img/image-20200103115532968.png)
 
    因此，如果需要创建一笔输出为 $x$ BTC的交易，必须指定上图四个交易输出中的几个作为新交易的输入，使得输入的金额大于 $x$。
 
