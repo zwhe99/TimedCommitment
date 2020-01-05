@@ -1,13 +1,13 @@
 # TimedCommitment
 The implementation of bitcoin-based timed-commitment scheme from "Secure Multiparty Computations on Bitcoin"
 
-定时承诺的实现
+教程：定时承诺的实现
 ==============
 
 定时承诺介绍
 ----------------
 
-​	承诺过程包括两个阶段：承诺阶段和开启阶段。通常来说，承诺在两方之间执行：承诺方C和接受方。更一般地说，我们可以假设有n个接受者，表示为$P_1, ...,P_n$. 
+承诺过程包括两个阶段：承诺阶段和开启阶段。通常来说，承诺在两方之间执行：承诺方C和接受方。更一般地说，我们可以假设有n个接受者，表示为$P_1, ...,P_n$. 
 
 * 承诺阶段
 
@@ -94,9 +94,15 @@ The implementation of bitcoin-based timed-commitment scheme from "Secure Multipa
       
     * 更详细的内容请参考《两种定时承诺实现方法的比较》
     
-
-环境准备
---------------
+    * 由于本人表达能力有限，如果有模糊的地方请以原始资料为准
+    
+      *  [BIP68中关于Sequence的定义](https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki)
+      *  [BIP112中关于CHECKSEQUENCEVERIFY的定义](https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki)
+      *  [比特币脚本大全](https://en.bitcoin.it/wiki/Script)
+      *  [btcpy文档](https://github.com/chainside/btcpy#scripts)(在网页中搜索"Timelocks, Hashlocks, IfElse"关键词)
+    
+      
+## 环境准备
 
 * **建议全程科学上网**
 
@@ -160,21 +166,30 @@ The implementation of bitcoin-based timed-commitment scheme from "Secure Multipa
     pip install chainside-btcpy
     ```
     
+    
+    
   * 简介
     
     * btcpy是一个Python>=3.3 segwiti兼容的库，它提供了以简单的方式处理比特币数据结构的工具。这个库的主要目标是提供一个简单的接口来解析和创建复杂的比特币脚本。
-    
     * **注意: ** 这个库是一个正在开发的库，所以不建议在生产环境中使用它**（但是也找不到别的更好的库了）**。此外，只要版本是0.*， 就要注意 API 有可能产生大的变化。
-    
     * btcpy 的文档不是很全，必要时需要查看其源码。源码中的注释可以帮你更好地理解它的功能。
-    
     * 文档连接
       
       * https://github.com/chainside/btcpy#installation
-      
     * btcpy 是完全离线工作的，不需要访问区块链。我们主要使用 btcpy 完成：脚本和交易的创建、交易的广播
     
-      
+    
+    
+  * **设定**
+  
+    **首次导入此程序包时要做的第一件事是设置一个全局状态，该状态指示你正在哪个网络上工作以及是否要启用严格模式。**我们将在比特币测试网进行工作，因此设置参数为 'testnet'（**下文不再提示**）。
+    
+    ```python
+    from btcpy.setup import setup
+    setup('testnet', strict=True)
+    ```
+    
+    
   
  * 工具类网站
    
@@ -208,7 +223,13 @@ The implementation of bitcoin-based timed-commitment scheme from "Secure Multipa
       
       * https://ide.bitauth.com/
       
-    * http://bitcoin-script-debugger.visvirial.com/
+      * http://bitcoin-script-debugger.visvirial.com/
+
+        
+      
+    * 比特币脚本资料
+    
+      * https://en.bitcoin.it/wiki/Script
       
         
       
@@ -224,7 +245,7 @@ The implementation of bitcoin-based timed-commitment scheme from "Secure Multipa
 
    **注意：**为了简化实现，我们只设置一个接收方。
 
-   **注意：** 不加说明的情况下，以下操作都默认基于比特币测试网。
+   **注意：**不加说明的情况下，以下操作都默认基于比特币测试网。
 
    
 
@@ -232,15 +253,18 @@ The implementation of bitcoin-based timed-commitment scheme from "Secure Multipa
 
    ​	该部分讲述了一些在实现过程中比较常用的功能和代码，以避免后续重复解释。
 
-   
+
 
    #### 生成钱包地址
 
    * 使用 BlockCypher 的API生成地址
    
-     ```
+     ```curl
      curl -X POST https://api.blockcypher.com/v1/btc/test3/addrs
+     ```
      
+     ```python
+     输出：
      {
        "private": "d9e9d07e538cd27e4bfaa712c1e7893149670c10d27fc61471b11c7a4c918169",
        "public": "03cfecd654690aaa8ab5ad5fb15818f44a3f341290f2ebf5e1c61ada78f8162844",
@@ -249,8 +273,9 @@ The implementation of bitcoin-based timed-commitment scheme from "Secure Multipa
      }
      ```
    
+     
      或者
-   
+     
      ```python
      import json
      import requests
@@ -261,8 +286,16 @@ The implementation of bitcoin-based timed-commitment scheme from "Secure Multipa
      print('pub_key', response_content['public'])
      print('address', response_content['address'])
      ```
+     
+     ```python
+     输出：
+     pri_key d9e9d07e538cd27e4bfaa712c1e7893149670c10d27fc61471b11c7a4c918169
+     ub_key 03cfecd654690aaa8ab5ad5fb15818f44a3f341290f2ebf5e1c61ada78f8162844
+     address mfyex4qxDmFx4fX8uA9xyNV6tjQZVxbeoN   
+     ```
+     
+     
 
-   
 
    #### 创建公钥、私钥和地址对象
 
@@ -285,7 +318,7 @@ The implementation of bitcoin-based timed-commitment scheme from "Secure Multipa
 
    * 方法一：人工广播
    
-     将 raw transaction 复制到 https://tbtc.bitaps.com/broadcast，点击Boardcast。
+     将 raw transaction 复制到 https://tbtc.bitaps.com/broadcast，点击Broadcast。
    
      ![image-20200102233144765](C:\Users\QJ\AppData\Roaming\Typora\typora-user-images\image-20200102233144765.png)
    
@@ -310,10 +343,10 @@ The implementation of bitcoin-based timed-commitment scheme from "Secure Multipa
      import json
      import re
      
-     def boardcast_raw_tx(raw_tx):
+     def broadcast_raw_tx(raw_tx):
          raw_tx = raw_tx.strip()
          if re.match('^[0-9A-Fa-f]+$', raw_tx, flags=0) is not None:
-             print('Boardcasting...')
+             print('Broadcasting...')
              data = {"jsonrpc": "1.0", "id": "1", "method": "sendrawtransaction", "params": 	[raw_tx]}
              response = requests.post('https://api.bitaps.com/btc/testnet/native/', data=json.dumps(data))
              response_content = json.loads(str(response.content, 'utf-8'))
@@ -353,7 +386,78 @@ The implementation of bitcoin-based timed-commitment scheme from "Secure Multipa
      *  原因：初步猜测是因为这两种方法背后的机制不同。
      
         *  bitaps-broadcast 背后的服务器应该执行了挖矿程序，并且在执行途中发现了$PayDeposit_{i}$ 交易不符合条件，因此直接驳回了该交易，并能够返回相应的错误信息。
+        
      * blockcypher API 背后的服务器中应该是没有矿工挖矿的程序执行的，它只是负责把交易广播给网络中的其它矿工结点，因此它根本不能够发现交易是不满足时间锁定条件的。而其他矿工结点在发现该交易不满足时间锁定条件后，很有可能会直接放弃该交易，而不是等待时间锁定条件满足。因此，即使时间已经满足了条件，还是要通过其它方法重新向网络中广播该交易。
+
+#### 获取Raw transaction
+
+* 通过交易的哈希人工查询
+
+  在 https://tbtc.bitaps.com/ 上搜索交易的哈希，在[交易的详情页面](https://tbtc.bitaps.com/59ceb0cd9cb8a63ff8cc3a4c6979dcb29b2af81b267829035a5ac3d409c85e98)中点击 [Raw transaction](https://tbtc.bitaps.com/raw/transaction/59ceb0cd9cb8a63ff8cc3a4c6979dcb29b2af81b267829035a5ac3d409c85e98)。
+
+  ![image-20200104095730755](C:\Users\QJ\AppData\Roaming\Typora\typora-user-images\image-20200104095730755.png)
+
+* 使用 blockcypher 的get_transaction_detail 方法
+
+  ```python
+  from blockcypher import get_transaction_details
+  
+  def get_raw_tx(tx_hash, coin_symbol):
+      tx = get_transaction_details(tx_hash, coin_symbol, include_hex=True)
+      return tx['hex']
+  ```
+
+
+#### 解码 Raw Transaction
+
+```python
+from btcpy.structs.transaction import TransactionFactory
+
+# raw transaction
+raw_tx = '0200000001985ec809d4c35a5a032978261bf82a9bb2dc79694c3accf83fa6b89ccdb0ce59000000007b4730440220336dc455eaad9573cc25294bfbc1138c7130fb67f1833c35fac752215bdb34560220410573ded0d823dfc1827875e2b7c4f8aa16dabcf803288836a5f81774b79925012103acb78908123c649e65d5e3689c3c53c25725c6eb53a6aa7834f73127c4eb2db10f49206861766520616e206170706c6551ffffffff0102830100000000001976a9141d78b0742727857d169c0c4f17795b9f18b4b0d588ac00000000'
+
+# decode from raw transaction and print
+tx = TransactionFactory.unhexlify(raw_tx)
+print(tx.to_json())
+```
+
+```python
+输出：
+{
+  "hex": "0200000001985ec809d4c35a5a032978261bf82a9bb2dc79694c3accf83fa6b89ccdb0ce59000000007b4730440220336dc455eaad9573cc25294bfbc1138c7130fb67f1833c35fac752215bdb34560220410573ded0d823dfc1827875e2b7c4f8aa16dabcf803288836a5f81774b79925012103acb78908123c649e65d5e3689c3c53c25725c6eb53a6aa7834f73127c4eb2db10f49206861766520616e206170706c6551ffffffff0102830100000000001976a9141d78b0742727857d169c0c4f17795b9f18b4b0d588ac00000000",
+  "txid": "4742ef605b1553f9d8cd400713c8b44d9094d750258e20e60a5dac6d9aed8d29",
+  "hash": "4742ef605b1553f9d8cd400713c8b44d9094d750258e20e60a5dac6d9aed8d29",
+  "size": 208,
+  "vsize": 208,
+  "version": 2,
+  "locktime": 0,
+  "vin": [
+    {
+      "txid": "59ceb0cd9cb8a63ff8cc3a4c6979dcb29b2af81b267829035a5ac3d409c85e98",
+      "vout": 0,
+      "scriptSig": {
+        "asm": "30440220336dc455eaad9573cc25294bfbc1138c7130fb67f1833c35fac752215bdb34560220410573ded0d823dfc1827875e2b7c4f8aa16dabcf803288836a5f81774b7992501 03acb78908123c649e65d5e3689c3c53c25725c6eb53a6aa7834f73127c4eb2db1 49206861766520616e206170706c65 OP_1",
+        "hex": "4730440220336dc455eaad9573cc25294bfbc1138c7130fb67f1833c35fac752215bdb34560220410573ded0d823dfc1827875e2b7c4f8aa16dabcf803288836a5f81774b79925012103acb78908123c649e65d5e3689c3c53c25725c6eb53a6aa7834f73127c4eb2db10f49206861766520616e206170706c6551"
+      },
+      "sequence": "4294967295"
+    }
+  ],
+  "vout": [
+    {
+      "value": "0.00099074",
+      "n": 0,
+      "scriptPubKey": {
+        "asm": "OP_DUP OP_HASH160 1d78b0742727857d169c0c4f17795b9f18b4b0d5 OP_EQUALVERIFY OP_CHECKSIG",
+        "hex": "76a9141d78b0742727857d169c0c4f17795b9f18b4b0d588ac",
+        "type": "p2pkh",
+        "address": "miCnUFjFhALHub5VewXv13HCy4FJ5PZrCH"
+      }
+    }
+  ]
+}
+```
+
+
 
 #### 清理资产(sweeping fund)
 
@@ -375,7 +479,10 @@ The implementation of bitcoin-based timed-commitment scheme from "Secure Multipa
    ```python
    from blockcypher import get_address_details
    get_address_details('n1rR5McqgF7GHWmj4V7HFRvyvX2wAd64xp', coin_symbol='btc-testnet')
-   
+   ```
+
+   ```python
+   输出：
    {
      "address": "n1rR5McqgF7GHWmj4V7HFRvyvX2wAd64xp",
      "total_received": 4003446,
@@ -431,53 +538,55 @@ The implementation of bitcoin-based timed-commitment scheme from "Secure Multipa
                coin_symbol='btc-testnet', 
                api_key='YOUR_TOKEN')
    print(tx_hash)
+   ```
    
+   ```python
+输出：
    'c913b2424445c1b882c8b3198f1268af672ad7e604b8c206b3c341e8715f15e7'
    ```
 
    
-
+   
    于是，我们将刚刚四笔交易的钱，通过一笔交易汇合在了一起。这样在下次创建交易时，就只需要一个输入了。
-
+   
    ![image-20200103130837452](C:\Users\QJ\AppData\Roaming\Typora\typora-user-images\image-20200103130837452.png)
 
-   
+
 
    当然，这种方法的缺点也是显而易见的：
 
-   	1. 需要时间去确认新的交易是否被网络接受
-    	2. 创建额外的交易，意味着支付额外的矿工挖矿费用
+   1. 需要时间去确认新的交易是否被网络接受
+   
+   2. 创建额外的交易，意味着支付额外的矿工挖矿费用
+   
+      ​	但出于方便并且获取测试币较为容易，我在实现时还是使用了这种方法。
 
-   但出于方便并且获取测试币较为容易，我在实现时还是使用了这种方法。
 
-#### 获取 Raw transaction
-
-```python
-from blockcypher import get_transaction_details
-
-def get_raw_tx(tx_hash, coin_symbol):
-    tx = get_transaction_details(tx_hash, coin_symbol, include_hex=True)
-    return tx['hex']
-```
 
 #### 如何决定Mining Fee
 
-​	交易的 mining fee 是指支付给矿工的采矿费用。其值等于交易输入金额减去输出金额得到的差值。Mining fee 越高，矿工越有兴趣广播该交易，交易被确认得越快。
+​	交易的 mining fee 是指支付给矿工的采矿费用。其值等于交易 *输入金额* 和* 输出金额* 的差值。Mining fee 越高，矿工越有兴趣广播该交易，交易被确认得越快。
 
 ​	一般来说，交易的 size 越大需要支付的 mining fee 越多。但是交易的大小在创建完成之前很难精确计算，所以一般采用估算的方法：
 
-根据搜索到的资料，普通交易的字节数可以通过其输入和输出的数量估算，公式如下：
+​    根据搜索到的资料，普通交易的字节数可以通过其输入和输出的数量估算，公式如下：
 
 ```python
 def cal_tx_size_in_byte(inputs_num, outputs_num):
     return inputs_num * 180 + outputs_num * 34 + 10
 ```
-此外，可以通过 blockcypher 的 get_blockchain_overview 方法获得每 KB 的挖矿费用 (statoshi / kbytes)
+此外，可以通过 blockcypher 的 get_blockchain_overview 方法获得每 KB 的挖矿费用 (statoshi / kbytes)。
+
+**注意：**$1 BTC = 10^{8}statoshi$
 
 ```python
 from blockcypher import get_blockchain_overview
 
-get_blockchain_overview(coin_symbol='btc-testmet', api_key='YOUR_TOKEN')
+get_blockchain_overview(coin_symbol='btc-testet', api_key='YOUR_TOKEN')
+```
+
+```python
+输出：
 
 {
  	.........
@@ -496,3 +605,590 @@ get_blockchain_overview(coin_symbol='btc-testmet', api_key='YOUR_TOKEN')
 | **medium_fee_per_kb** | *integer* | A rolling average of the fee (in satoshis) paid per kilobyte for transactions to be confirmed within 3 to 6 blocks. |
 | **low_fee_per_kb**    | *integer* | A rolling average of the fee (in satoshis) paid per kilobyte for transactions to be confirmed in 7 or more blocks. |
 
+**注意：**根据我的经验，建议将以上方法得到的交易费用乘一个系数2或者3，以使交易尽可能快地得到确认。
+
+
+
+### 定时承诺的实现
+
+我们使用 [定时承诺介绍](#定时承诺介绍) 中介绍的 *“实现二”*  来实现定时承诺。
+
+#### *Commit* 交易
+
+* [创建 *Commiter* 的公钥、私钥和地址对象以及 *Recipient* 的公钥对象](#创建公钥、私钥和地址对象)
+
+* 对秘密通过 HASH256 进行加密
+
+  比如我们设置一个秘密是 "I have an apple"，并通过 HASH256 加密。
+
+  **注意：** 
+
+  1. HASH256 等价于两次 SHA256
+
+   	2. 为了方便，这里的秘密后面没有拼接随机数
+
+  ```python
+  import hashlib
+  from btcpy.structs.sig import *
+  
+  # a sample of secret
+  secret = 'I have an apple'.encode()
+  secret_hash = hashlib.sha256(hashlib.sha256(secret).digest()).digest()
+  secret_hash = StackData.from_bytes(secret_hash) # StackData类表示脚本压入堆栈的数据
+  print("秘密经hash256加密结果:", secret_hash)
+  ```
+
+  ```python
+  输出：
+  秘密经hash256加密结果: 59d47d5565ce1e8df0772e5c00abdb31b8ca140017511a8afe6ba567fb27b79d
+  ```
+
+  
+
+* [清理资产](#清理资产(sweeping-fund))
+
+  ```python
+  # 清理资产
+  # 返回交易的哈希和钱包余额
+  to_spend_hash, balance = sweep_fund(privkey=privk_hex, # commiter's privket in hex format
+                                      address="commiter's address", 
+                                      coin_symbol='btc-testnet',
+                                      api_key='YOUR_TOKEN')
+  ```
+
+  
+
+* 创建输出脚本
+
+  关于比特币脚本，https://en.bitcoin.it/wiki/Script 上有非常详细的解读和例子，[btcpy的文档](https://github.com/chainside/btcpy#scripts)中也有很详细的创建脚本的示例，由于篇幅原因本教程不再赘述。
+
+  
+
+  由于 Commiter 除了付出押金还需要把剩余的钱转回给自己，因此我们一共需要两个输出脚本。
+  
+  * 定时承诺输出脚本
+  
+    ```python
+    from btcpy.structs.script import Hashlock256Script
+    from btcpy.structs.sig import *
+    
+    # sequence(lock_time)
+    sequence = 5
+    
+    lock_time_script = IfElseScript(
+        # if branch
+        Hashlock256Script(secret_hash,
+                          P2pkhScript(pubk)), # pubk: committer's public key
+        # else branch
+        RelativeTimelockScript(  # timelocked script
+            Sequence(sequence),  # expiration, 5 blocks
+            P2pkhScript(pubk2)   # recipient's public key
+        )
+    )
+    
+    print("lock_time_script.type: ", lock_time_script.type)
+    print("lock_time_script str: ", str(lock_time_script))
+    ```
+  
+    ```python
+    输出：
+    
+    lock_time_script.type:  if{ [hashlock] p2pkh }else{ [relativetimelock] p2pkh }
+        
+    lock_time_script str:  OP_IF OP_HASH256 59d47d5565ce1e8df0772e5c00abdb31b8ca140017511a8afe6ba567fb27b79d OP_EQUALVERIFY OP_DUP OP_HASH160 1d78b0742727857d169c0c4f17795b9f18b4b0d5 OP_EQUALVERIFY OP_CHECKSIG OP_ELSE OP_5 OP_CHECKSEQUENCEVERIFY OP_DROP OP_DUP OP_HASH160 02d07fadf17edd37bc6fbab18a2b38057560e64a OP_EQUALVERIFY OP_CHECKSIG OP_ENDIF
+    # 其中59d47d55.......就是 "I have an apple" 经过HASH256的结果
+    ```
+  
+    Sequence既可以基于时间(time_based)，也可以基于块的个数(block-based), 具体的设置要求请见[BIP68](https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki)。也可以直接使用 btcpy 中的：TimebasedSequence 或者 HeightBasedSequence 类。
+  
+    ​	
+  
+  * 找零输出脚本
+  
+    ```python
+    # 找零脚本
+    change_script = P2pkhScript(pubk)
+    ```
+  
+  
+  
+* 估算Mining Fee
+
+  ```python
+  mining_fee_per_kb = get_mining_fee_per_kb(coin_symbol, api_key, condidence='high')
+  estimated_tx_size = cal_tx_size_in_byte(inputs_num=1, outputs_num=2)
+  mining_fee = int(mining_fee_per_kb * (estimated_tx_size / 1000)) * 2
+  ```
+
+* 设置罚金
+
+  ```python
+  penalty = 100000
+  assert penalty + mining_fee <= balance, 'commiter账户余额不足'
+  ```
+
+* 获取交易输入
+
+  ```python
+  from btcpy.structs.transaction import TransactionFactory
+  
+  to_spend_raw = get_raw_tx(to_spend_hash, coin_symbol='btc-testnet')
+  to_spend = TransactionFactory.unhexlify(to_spend_raw)
+  ```
+
+* 创建交易
+
+  **注意：**交易的 version 参数必须为2。只有 version=2 的交易才能使用 *相对锁定时间*  功能。
+
+  ```python
+  from btcpy.structs.transaction import TxIn, Sequence, TxOut, Locktime, MutableTransaction
+  from btcpy.structs.script import  ScriptSig
+  
+  unsigned = MutableTransaction(version=2,
+                                ins=[TxIn(txid=to_spend.txid,			 # 上一笔交易的哈希
+                                          txout=0,					# 使用第一个输出
+                                          script_sig=ScriptSig.empty(), # 输入脚本为空(待修改)
+                                          sequence=Sequence.max())], 	  # 0xFFFFFF
+                                outs=[TxOut(value=penalty, # 金额				
+                                            n=0,			# 输出编号
+                                            script_pubkey=lock_time_script), # 输出脚本
+                                      TxOut(value=balance - penalty - mining_fee,
+                                            n=1,
+                                            script_pubkey=change_script)],
+                                locktime=Locktime(0))
+  ```
+
+  此时，交易的输入脚本为空。
+
+  
+
+* 修改交易
+
+  ```python
+  from btcpy.structs.sig import *
+  
+  # 输入脚本
+  solver = P2pkhSolver(privk) # privk is committer's private key
+  
+  # 修改交易
+  signed = unsigned.spend([to_spend.outs[0]], [solver]) # 指定上一笔交易(to_spend)的输出和对应的输入脚本
+  print('commit_tx_hex: ', signed.hexlify())
+  ```
+
+  ```python
+  输出：
+  
+  commit_tx_hex: 
+  0200000001e3021f415eb615e05e8336e69273c6fa5925198f91806c2dff033984e436f209000000006a4730440220250640256828bf76e4e52d671c8c8c43ca900639a0e2a6424a9b69135913f78102204145f7e5b700ab8390bc74dec331165ee12991d8c6d7d48ef2f4f24b8e0736d3012103acb78908123c649e65d5e3689c3c53c25725c6eb53a6aa7834f73127c4eb2db1ffffffff02a0860100000000005b63aa2059d47d5565ce1e8df0772e5c00abdb31b8ca140017511a8afe6ba567fb27b79d8876a9141d78b0742727857d169c0c4f17795b9f18b4b0d588ac6755b27576a91402d07fadf17edd37bc6fbab18a2b38057560e64a88ac68e0480200000000001976a9141d78b0742727857d169c0c4f17795b9f18b4b0d588ac00000000
+  ```
+
+  
+
+ * [广播交易](#广播交易)
+
+   ```python
+   from blockcypher import pushtx
+   tx = pushtx(coin_symbol=coin_symbol, api_key=api_key, tx_hex=signed.hexlify())
+   print(tx)
+   ```
+
+   ```python
+   输出：
+   {
+     "tx": {
+       "block_height": -1,
+       "block_index": -1,
+       "hash": "59ceb0cd9cb8a63ff8cc3a4c6979dcb29b2af81b267829035a5ac3d409c85e98",
+       "addresses": [
+         "miCnUFjFhALHub5VewXv13HCy4FJ5PZrCH"
+       ],
+       "total": 249728,
+       "fees": 878,
+       "size": 291,
+       "preference": "low",
+       "relayed_by": "221.4.34.18",
+       "received": "2020-01-03T15:21:12.059432676Z",
+       "ver": 2,
+       "double_spend": false,
+       "vin_sz": 1,
+       "vout_sz": 2,
+       "confirmations": 0,
+       "inputs": [
+         {
+           "prev_hash": "09f236e4843903ff2d6c80918f192559fac67392e636835ee015b65e411f02e3",
+           "output_index": 0,
+           "script": "4730440220250640256828bf76e4e52d671c8c8c43ca900639a0e2a6424a9b69135913f78102204145f7e5b700ab8390bc74dec331165ee12991d8c6d7d48ef2f4f24b8e0736d3012103acb78908123c649e65d5e3689c3c53c25725c6eb53a6aa7834f73127c4eb2db1",
+           "output_value": 250606,
+           "sequence": 4294967295,
+           "addresses": [
+             "miCnUFjFhALHub5VewXv13HCy4FJ5PZrCH"
+           ],
+           "script_type": "pay-to-pubkey-hash",
+           "age": 0
+         }
+       ],
+       "outputs": [
+         {
+           "value": 100000,
+           "script": "63aa2059d47d5565ce1e8df0772e5c00abdb31b8ca140017511a8afe6ba567fb27b79d8876a9141d78b0742727857d169c0c4f17795b9f18b4b0d588ac6755b27576a91402d07fadf17edd37bc6fbab18a2b38057560e64a88ac68",
+           "addresses": null,
+           "script_type": "unknown"
+         },
+         {
+           "value": 149728,
+           "script": "76a9141d78b0742727857d169c0c4f17795b9f18b4b0d588ac",
+           "addresses": [
+             "miCnUFjFhALHub5VewXv13HCy4FJ5PZrCH"
+           ],
+           "script_type": "pay-to-pubkey-hash"
+         }
+       ]
+     }
+   }
+   ```
+
+   根据交易的哈希我们可以在网站中搜索到该交易：
+   
+   https://tbtc.bitaps.com/59ceb0cd9cb8a63ff8cc3a4c6979dcb29b2af81b267829035a5ac3d409c85e98
+   
+   可以看到该交易有一个输入，两个输出。第一个输出是非标准的脚本即定时承诺的脚本，第二个输出是标准的 pay-to-pubkey-hash 脚本。
+   
+   ![image-20200104100949635](C:\Users\QJ\AppData\Roaming\Typora\typora-user-images\image-20200104100949635.png)
+   
+   ![image-20200104101023911](C:\Users\QJ\AppData\Roaming\Typora\typora-user-images\image-20200104101023911.png)
+
+
+
+#### *Open* 交易
+
+##### 创建并广播 *Open* 交易
+
+* [创建 *Commiter* 的公钥、私钥对象](#创建公钥、私钥和地址对象)
+
+* 准备好秘密的*原像*， 创建输入脚本和输出脚本
+
+  ```python
+  from btcpy.structs.sig import IfElseSolver, HashlockSolver, P2pkhSolver, Branch
+  
+  # 创建输入脚本
+  secret = 'I have an apple'  # 需要展示的秘密
+  p2pkh_solver = P2pkhSolver(privk)
+  hasklock_solver = HashlockSolver(secret.encode(), p2pkh_solver)
+  if_solver = IfElseSolver(Branch.IF,  # branch selection
+                           hasklock_solver)
+  # 创建输出脚本
+  script = P2pkhScript(pubk)
+  ```
+
+* 准备好上一笔交易，获取押金的数额
+
+  ```python
+  from btcpy.structs.transaction import TransactionFactory
+  
+  to_spend_hash = "Commit 交易的hash"
+  to_spend_raw = get_raw_tx(to_spend_hash, coin_symbol)
+  to_spend = TransactionFactory.unhexlify(to_spend_raw)
+  penalty = int(float(to_spend.to_json()['vout'][0]['value']) * (10**8))
+  ```
+
+* 估算Mining Fee，创建交易，修改输入脚本
+
+  ```python
+  from btcpy.structs.transaction import TxIn, Sequence, TxOut, Locktime, MutableTransaction
+  from btcpy.structs.script import  ScriptSig
+  
+  # 估算 Mining Fee
+  mining_fee_per_kb = get_mining_fee_per_kb(coin_symbol, api_key, condidence='high')
+  estimated_tx_size = cal_tx_size_in_byte(inputs_num=1, outputs_num=1)
+  mining_fee = int(mining_fee_per_kb * (estimated_tx_size / 1000)) * 2
+  
+  # 创建交易
+  unsigned = MutableTransaction(version=2,
+                                ins=[TxIn(txid=to_spend.txid,
+                                          txout=0,
+                                          script_sig=ScriptSig.empty(),
+                                          sequence=Sequence.max())],
+                                outs=[TxOut(value=penalty - mining_fee,
+                                            n=0,
+                                            script_pubkey=script),
+                                      ],
+                                locktime=Locktime(0))
+  
+  # 修改输入脚本
+  signed = unsigned.spend([to_spend.outs[0]], [if_solver])
+  ```
+
+ * 广播交易
+
+   ```python
+   from blockcypher import pushtx
+   
+   msg = pushtx(coin_symbol='btc-testnet', api_key='YOUR_TOKEN', tx_hex=signed.hexlify())
+   print(msg)
+   ```
+
+   ```python
+   输出：
+   {
+     "tx": {
+       "block_height": -1,
+       "block_index": -1,
+       "hash": "4742ef605b1553f9d8cd400713c8b44d9094d750258e20e60a5dac6d9aed8d29",
+       "addresses": [
+         "miCnUFjFhALHub5VewXv13HCy4FJ5PZrCH"
+       ],
+       "total": 99074,
+       "fees": 926,
+       "size": 208,
+       "preference": "low",
+       "relayed_by": "221.4.34.170",
+       "received": "2020-01-04T02:39:38.239402344Z",
+       "ver": 2,
+       "double_spend": false,
+       "vin_sz": 1,
+       "vout_sz": 1,
+       "confirmations": 0,
+       "inputs": [
+         {
+           "prev_hash": "59ceb0cd9cb8a63ff8cc3a4c6979dcb29b2af81b267829035a5ac3d409c85e98",
+           "output_index": 0,
+           "script": "4730440220336dc455eaad9573cc25294bfbc1138c7130fb67f1833c35fac752215bdb34560220410573ded0d823dfc1827875e2b7c4f8aa16dabcf803288836a5f81774b79925012103acb78908123c649e65d5e3689c3c53c25725c6eb53a6aa7834f73127c4eb2db10f49206861766520616e206170706c6551",
+           "output_value": 100000,
+           "sequence": 4294967295,
+           "script_type": "unknown",
+           "age": 1638254
+         }
+       ],
+       "outputs": [
+         {
+           "value": 99074,
+           "script": "76a9141d78b0742727857d169c0c4f17795b9f18b4b0d588ac",
+           "addresses": [
+             "miCnUFjFhALHub5VewXv13HCy4FJ5PZrCH"
+           ],
+           "script_type": "pay-to-pubkey-hash"
+         }
+       ]
+     }
+   }
+   ```
+   
+
+   
+   通过[查询这笔交易](https://tbtc.bitaps.com/4742ef605b1553f9d8cd400713c8b44d9094d750258e20e60a5dac6d9aed8d29)可以看到 Committer 取回了罚金：
+   
+   ![image-20200104104514251](C:\Users\QJ\AppData\Roaming\Typora\typora-user-images\image-20200104104514251.png)
+
+
+
+##### 查看秘密
+
+* 获取 *Open* 交易
+
+  ```python
+  from btcpy.structs.transaction import TransactionFactory
+  
+  # 获取Open交易
+  open_tx_hash = '4742ef605b1553f9d8cd400713c8b44d9094d750258e20e60a5dac6d9aed8d29'  # open交易的hash
+  raw_open_tx = get_raw_tx(open_tx_hash, coin_symbol)
+  open_tx = TransactionFactory.unhexlify(raw_open_tx)  # decode raw transaction
+  open_tx = open_tx.to_json()
+  ```
+
+  
+
+* 处理 *Open* 交易的输入脚本
+
+  ```python
+  # 获取输入脚本
+  scriptSig = open_tx['vin'][0]['scriptSig']['asm']
+  
+  # 将输入脚本按空格分割
+  scriptSig_list = scriptSig.split()
+  ```
+
+  
+
+* 获取 *秘密*  并进行解码
+
+  ```python
+  # 如无意外，秘密应该在脚本的倒数第二个位置
+  secret_hex = scriptSig_list[-2]
+  
+  # 从hex将秘密解码出来
+  print('secret hex: ', secret_hex)
+  print('decoded secret: ', bytes.fromhex(secret_hex).decode())
+  ```
+
+  ```python
+  输出：
+  secret hex:  49206861766520616e206170706c65
+  decoded secret:  I have an apple
+  ```
+
+
+
+#### *PayDeposit* 交易
+
+当 Committer 超过了时间限定却还没有执行 *Open*交易 时，Recipient可以执行 *PayDeposit*交易 获取 Committer 支付的押金。
+
+这里我重新创建并广播了 [Commit 交易](https://tbtc.bitaps.com/bcf352c53d01bd0e33e7d3a9eb70ca8492d335c4d3d84a93b301066ce953e974) ，它的txid为:
+
+```python
+commit_tx_hash = 'bcf352c53d01bd0e33e7d3a9eb70ca8492d335c4d3d84a93b301066ce953e974'
+```
+
+
+
+##### 创建交易
+
+* [创建 Recipient 的公钥和私钥对象](#创建公钥、私钥和地址对象)
+
+* 获取 *Commit* 交易以及罚金数额
+
+  ```python
+  from btcpy.structs.transaction import TransactionFactory
+  
+  # 获取 commit 交易
+  to_spend_hash = commit_tx_hash # commit交易的hash
+  to_spend_raw = get_raw_tx(to_spend_hash, coin_symbol='btc-testnet')
+  to_spend = TransactionFactory.unhexlify(to_spend_raw)
+  
+  # 获取罚金数额
+  penalty = int(float(to_spend.to_json()['vout'][0]['value']) * (10**8))
+  ```
+
+  
+
+* 创建输出脚本计算mining fee
+
+  ```python
+  from btcpy.structs.script import P2pkhScript
+  
+  # 输出脚本
+  script = P2pkhScript(pubk) # pubk为 Recipient 的公钥
+  
+  # 计算挖矿费用
+  mining_fee_per_kb = get_mining_fee_per_kb(coin_symbol, api_key, condidence='high')
+  estimated_tx_size = cal_tx_size_in_byte(inputs_num=1, outputs_num=1)
+  mining_fee = int(mining_fee_per_kb * (estimated_tx_size / 1000)) * 2
+  ```
+
+  
+
+* 创建交易
+
+  ```python
+  from btcpy.structs.transaction import TxIn, Sequence, TxOut, Locktime, MutableTransaction
+  from btcpy.structs.script import  ScriptSig
+  
+  # 创建交易
+  unsigned = MutableTransaction(version=2,
+                                ins=[TxIn(txid=to_spend.txid,
+                                          txout=0,
+                                          script_sig=ScriptSig.empty(),
+                                          sequence=Sequence.max())],
+                                outs=[TxOut(value=penalty - mining_fee,
+                                            n=0,
+                                            script_pubkey=script)],
+                                locktime=Locktime(0))
+  ```
+
+  
+
+* 创建输入脚本，修改交易
+
+  ```python
+  from btcpy.structs.sig import IfElseSolver, P2pkhSolver, Branch, RelativeTimelockSolver
+  
+  # 输入脚本
+  else_solver = IfElseSolver(Branch.ELSE, # Branch selection
+                             RelativeTimelockSolver(Sequence(5), P2pkhSolver(privk))) # privk为 Recipient 的私钥
+  
+  # 修改交易
+  signed = unsigned.spend([to_spend.outs[0]], [else_solver])
+  ```
+
+  **注意：** 对于 *RelativeTimelockSolver* 中的第一个参数 *Sequence($x$)*， 应至少使 $x$ 大于等于 [*Commit* 交易](#*Commit* 交易) 中设置的sequence参数的值(上文中设置为5)，这里是解除 *时间锁定* 的地方。当然，一般设置为等于即可。
+
+
+
+##### 广播交易
+
+```python
+# 广播交易
+print('pay_desposit_hex:', signed.hexlify())
+msg = broadcast_raw_tx(signed.hexlify())
+print(msg)
+```
+
+**注意：**这里请用[广播交易](#广播交易)中的 **方法三** 进行广播。
+
+
+
+###### 未解除时间锁定
+
+假设在规定的时间之前，Recipient 想提前获得押金，那么比特币网络将驳回 *PayDeposit* 交易。
+
+```python
+# 未解除时间锁定时的输出：
+{
+  "result": null,
+  "error": {
+    "code": -26,
+    "message": "non-BIP68-final (code 64)"
+  },
+  "id": "1"
+}
+```
+
+出现了错误代码：-26 和 错误信息："non-BIP68-final (code 64)"
+
+根据 [比特币RPC的源代码](https://github.com/bitcoin/bitcoin/blob/62f2d769e45043c1f262ed45babb70fe237ad2bb/src/rpc/protocol.h#L30):
+
+```c
+enum RPCErrorCode
+{
+    .........
+    RPC_VERIFY_REJECTED             = -26, //! Transaction or block was rejected by network rules
+    .........
+};
+```
+
+code：-26 对应的错误的原因是：*交易或者区块根据比特币网络的规则被驳回*
+
+
+
+进一步在 [比特币验证交易的源码](https://github.com/bitcoin/bitcoin/blob/1f8378508acfc1f6ca48dcc75eb0848e82bb183d/src/validation.cpp#L1362) 中搜索 "non-BIP68-final (code 64)" 可以得到：
+
+```c
+.........
+return (ValidationInvalidReason::TX_PREMATURE_SPEND, false, 			               REJECT_NONSTANDARD, "non-BIP68-final");
+```
+
+可见，该交易验证为无效的原因是：TX_PREMATURE_SPEND，即交易 *过早地* 被花费。这正是我们希望看到的结果。
+
+
+
+###### 成功解除时间锁定
+
+等待 *Commit* 交易的确认数到达 5 个(或以上)的时候，重新广播 *PayDeposit* 交易
+
+![image-20200104153758476](C:\Users\QJ\AppData\Roaming\Typora\typora-user-images\image-20200104153758476.png)
+
+```python
+# 成功解除时间锁定时的输出：
+{
+  "result": "dd00307873009574c0536b71ad776370423c814052ba551f6848af942cf1d902",
+  "error": null,
+  "id": "1"
+}
+```
+
+其中 *error* 为 null，交易被成功广播，result字段是交易的hash。
+
+
+
+通过hash值搜索交易，可以看到 Recipient 已经获得了押金：
+
+![image-20200104154123024](C:\Users\QJ\AppData\Roaming\Typora\typora-user-images\image-20200104154123024.png)
