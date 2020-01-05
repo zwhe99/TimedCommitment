@@ -1,5 +1,6 @@
-# TimedCommitment
+# Timed Commitment
 The implementation of bitcoin-based timed-commitment scheme from "Secure Multiparty Computations on Bitcoin"
+
 
 教程：定时承诺的实现
 ==============
@@ -51,7 +52,7 @@ The implementation of bitcoin-based timed-commitment scheme from "Secure Multipa
   
     * 具体的实施过程如图：
   
-      <img src="https://github.com/Hbenmazi/TimedCommitment/blob/master/img/image-20191206224108271.png" alt="a8ea7cd1861db26ac5c2b4d4cdb1cf02_1_2_art" style="zoom:130%;" />
+      ![a8ea7cd1861db26ac5c2b4d4cdb1cf02_1_2_art](\img\a8ea7cd1861db26ac5c2b4d4cdb1cf02_1_2_art.png)
       
     	* 关键点在于 $PayDeposit_{i}$ 交易的 **tlock**属性 。由于 **tlock**属性 的存在，$PayDeposit_{i}$ 在时间 $t$之前无法上链。值得注意的是， $PayDeposit_{i}$ 由承诺方构造，并且是需要承诺方 C 和接收方 $P_{i}$ 共同签名的多方签名交易。也就是说，由承诺方设定 **tlock** = $t$ 的条件，并且他自己签名表示同意。待时间满足 **tlock**属性的条件后，接收方 $P_{i}$ 签名，并广播 $PayDeposit_{i}$ 即可获得押金。
     	
@@ -320,7 +321,7 @@ The implementation of bitcoin-based timed-commitment scheme from "Secure Multipa
    
      将 raw transaction 复制到 https://tbtc.bitaps.com/broadcast，点击Broadcast。
    
-     ![image-20200102233144765](https://github.com/Hbenmazi/TimedCommitment/blob/master/img/image-20200102233144765.png)
+     ![image-20200102233144765](\img\image-20200102233144765.png)
    
      
    
@@ -463,8 +464,8 @@ print(tx.to_json())
 
 总所周知，一个比特币地址的余额是由比特币网络中所有指向该地址的UTXO(Unspent Transaction Output)之和决定的。例如，以下比特币地址的资产等于四个交易输出之和：
 
-![image-20200103115445357](img/image-20200103115254701.png) 
-![image-20200103115532968](img/image-20200103115532968.png)
+![image-20200103115445357](\img\image-20200103115445357.png) 
+![image-20200103115532968](\img\image-20200103115532968.png)
 
    因此，如果需要创建一笔输出为 $x$ BTC的交易，必须指定上图四个交易输出中的几个作为新交易的输入，使得输入的金额大于 $x$。
 
@@ -549,7 +550,7 @@ print(tx.to_json())
    
    于是，我们将刚刚四笔交易的钱，通过一笔交易汇合在了一起。这样在下次创建交易时，就只需要一个输入了。
    
-   ![image-20200103130837452](C:\Users\QJ\AppData\Roaming\Typora\typora-user-images\image-20200103130837452.png)
+   ![image-20200103130837452](\img\image-20200103130837452.png)
 
 
 
@@ -853,9 +854,9 @@ get_blockchain_overview(coin_symbol='btc-testet', api_key='YOUR_TOKEN')
    
    可以看到该交易有一个输入，两个输出。第一个输出是非标准的脚本即定时承诺的脚本，第二个输出是标准的 pay-to-pubkey-hash 脚本。
    
-   ![image-20200104100949635](C:\Users\QJ\AppData\Roaming\Typora\typora-user-images\image-20200104100949635.png)
+   ![image-20200104100949635](\img\image-20200104100949635.png)
    
-   ![image-20200104101023911](C:\Users\QJ\AppData\Roaming\Typora\typora-user-images\image-20200104101023911.png)
+   ![image-20200104101023911](\img\image-20200104101023911.png)
 
 
 
@@ -977,7 +978,7 @@ get_blockchain_overview(coin_symbol='btc-testet', api_key='YOUR_TOKEN')
    
    通过[查询这笔交易](https://tbtc.bitaps.com/4742ef605b1553f9d8cd400713c8b44d9094d750258e20e60a5dac6d9aed8d29)可以看到 Committer 取回了罚金：
    
-   ![image-20200104104514251](C:\Users\QJ\AppData\Roaming\Typora\typora-user-images\image-20200104104514251.png)
+   ![image-20200104104514251](\img\image-20200104104514251.png)
 
 
 
@@ -1174,7 +1175,7 @@ return (ValidationInvalidReason::TX_PREMATURE_SPEND, false, 			               RE
 
 等待 *Commit* 交易的确认数到达 5 个(或以上)的时候，重新广播 *PayDeposit* 交易
 
-![image-20200104153758476](C:\Users\QJ\AppData\Roaming\Typora\typora-user-images\image-20200104153758476.png)
+![image-20200104153758476](\img\image-20200104153758476.png)
 
 ```python
 # 成功解除时间锁定时的输出：
@@ -1191,4 +1192,5 @@ return (ValidationInvalidReason::TX_PREMATURE_SPEND, false, 			               RE
 
 通过hash值搜索交易，可以看到 Recipient 已经获得了押金：
 
-![image-20200104154123024](C:\Users\QJ\AppData\Roaming\Typora\typora-user-images\image-20200104154123024.png)
+![image-20200104154123024](\img\image-20200104154123024.png)
+
