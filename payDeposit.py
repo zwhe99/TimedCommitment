@@ -1,10 +1,11 @@
 from btcpy.setup import setup
 from btcpy.structs.script import P2pkhScript, ScriptSig
 from btcpy.structs.sig import IfElseSolver, P2pkhSolver, Branch, RelativeTimelockSolver
-from btcpy.structs.transaction import TransactionFactory
+from btcpy.structs.transaction import TransactionFactory, TimeBasedSequence, HeightBasedSequence
 from btcpy.structs.crypto import PublicKey, PrivateKey
 from btcpy.structs.transaction import TxIn, Sequence, TxOut, Locktime, MutableTransaction
 from utils import *
+import datetime
 
 # global
 setup('testnet', strict=True)
@@ -12,13 +13,13 @@ coin_symbol = 'btc-testnet'
 api_key = 'fe4a832ab7d14936b5731aa79cfa58ae'
 
 # recipient
-pubk_hex = '024fa55e08d8fa261fd12060aa1f68357b1f284a93edfd922ddb7910170aa55dae'
-privk_hex = 'aa35ddba99229ff38902f4969a2b3c0de4d8be45ad8c3858aeb2c3c6f663fdea'
+pubk_hex = '03fb2cd4d0b5248c5f62296e55ce59eab79d68b90fc1d9865bafbcaa556e1c766c'
+privk_hex = '56cc7c6c7b44896b7dcdece50de8a9801024f6d9718d172a64f2be30aa128ff0'
 pubk = PublicKey.unhexlify(pubk_hex)
 privk = PrivateKey.unhexlify(privk_hex)
 
 # 获取 commit 交易
-to_spend_hash = "bcf352c53d01bd0e33e7d3a9eb70ca8492d335c4d3d84a93b301066ce953e974"
+to_spend_hash = "bd7fcee69cfeb188d97befcd4d591359a6d0797d2811adee1c7fc76482d09787"
 to_spend_raw = get_raw_tx(to_spend_hash, coin_symbol)
 to_spend = TransactionFactory.unhexlify(to_spend_raw)
 
@@ -46,8 +47,16 @@ unsigned = MutableTransaction(version=2,
                               locktime=Locktime(0))
 
 # 输入脚本
+
+# Relative - HeightBased
 else_solver = IfElseSolver(Branch.ELSE,  # Branch selection
-                           RelativeTimelockSolver(Sequence(5), P2pkhSolver(privk)))
+                           RelativeTimelockSolver(HeightBasedSequence(0x00000002),
+                                                  P2pkhSolver(privk)))
+
+# Relative - TimeBased
+# else_solver = IfElseSolver(Branch.ELSE,  # Branch selection
+#                            RelativeTimelockSolver(TimeBasedSequence.from_timedelta(datetime.timedelta(minutes=5)),
+#                                                   P2pkhSolver(privk)))
 
 # 修改交易
 signed = unsigned.spend([to_spend.outs[0]], [else_solver])

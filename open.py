@@ -12,8 +12,8 @@ coin_symbol = 'btc-testnet'
 api_key = 'fe4a832ab7d14936b5731aa79cfa58ae'
 
 # committer
-pubk_hex = '03acb78908123c649e65d5e3689c3c53c25725c6eb53a6aa7834f73127c4eb2db1'
-privk_hex = '24ee94da001fd72ff33b315659f808a3bcd963499086798b634c83258383891f'
+pubk_hex = '0380557a219119218f7830bf3cdb2bb3c8220cac15db97e255498fb992e68c04a9'
+privk_hex = '385acd25450e50ecd5ad0fffec7b871c8f75eb3ba9ecded8d35a0765f4763d7e'
 pubk = PublicKey.unhexlify(pubk_hex)
 privk = PrivateKey.unhexlify(privk_hex)
 
@@ -27,7 +27,7 @@ if_solver = IfElseSolver(Branch.IF,  # branch selection
 script = P2pkhScript(pubk)
 
 # 获取commit交易
-to_spend_hash = "59ceb0cd9cb8a63ff8cc3a4c6979dcb29b2af81b267829035a5ac3d409c85e98"
+to_spend_hash = "1248098d291ec1438f69dff5644e336099cb6eeb0408a20211494412a2145551"
 to_spend_raw = get_raw_tx(to_spend_hash, coin_symbol)
 to_spend = TransactionFactory.unhexlify(to_spend_raw)
 
