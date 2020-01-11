@@ -3,10 +3,11 @@ from btcpy.structs.address import P2pkhAddress
 from btcpy.structs.crypto import PublicKey, PrivateKey
 from btcpy.structs.script import Hashlock256Script
 from btcpy.structs.sig import *
-from btcpy.structs.transaction import TransactionFactory
+from btcpy.structs.transaction import TransactionFactory, HeightBasedSequence, TimeBasedSequence
 from btcpy.structs.transaction import TxIn, Sequence, TxOut, Locktime, MutableTransaction
 from utils import *
 import hashlib
+import datetime
 
 # global
 setup('testnet', strict=True)
@@ -14,15 +15,15 @@ coin_symbol = 'btc-testnet'
 api_key = 'fe4a832ab7d14936b5731aa79cfa58ae'
 
 # committer
-pubk_hex = '03acb78908123c649e65d5e3689c3c53c25725c6eb53a6aa7834f73127c4eb2db1'
+pubk_hex = '0380557a219119218f7830bf3cdb2bb3c8220cac15db97e255498fb992e68c04a9'
 pubk = PublicKey.unhexlify(pubk_hex)
 address = P2pkhAddress(pubk.hash())
 
-privk_hex = '24ee94da001fd72ff33b315659f808a3bcd963499086798b634c83258383891f'
+privk_hex = '385acd25450e50ecd5ad0fffec7b871c8f75eb3ba9ecded8d35a0765f4763d7e'
 privk = PrivateKey.unhexlify(privk_hex)
 
 # recipient
-pubk_hex2 = '024fa55e08d8fa261fd12060aa1f68357b1f284a93edfd922ddb7910170aa55dae'
+pubk_hex2 = '03fb2cd4d0b5248c5f62296e55ce59eab79d68b90fc1d9865bafbcaa556e1c766c'
 pubk2 = PublicKey.unhexlify(pubk_hex2)
 
 # a sample of secret
@@ -31,22 +32,40 @@ secret_hash = hashlib.sha256(hashlib.sha256(secret).digest()).digest()
 secret_hash = StackData.from_bytes(secret_hash)
 print("秘密经hash256加密结果:", secret_hash)
 
-# sequence(lock_time)
-sequence = 5
-
 # 创建输出脚本
 
 # 定时脚本
+
+# Relative - HeightBased
+sequence = 0x00000002
 lock_time_script = IfElseScript(
     # if branch
     Hashlock256Script(secret_hash,
                       P2pkhScript(pubk)),
     # else branch
     RelativeTimelockScript(  # timelocked script
-        Sequence(sequence),  # expiration, 5 blocks
+        HeightBasedSequence(sequence),  # expiration, 5 blocks
         P2pkhScript(pubk2)
     )
 )
+
+# Relative - TimedBased
+# time_delta = datetime.timedelta(minutes=5)
+# time_now = datetime.datetime.now()
+# print("current time: ", time_now.strftime("%y-%m-%d %H:%M:%S"))
+# print("pay deposit time: ", (time_now + time_delta).strftime("%y-%m-%d %H:%M:%S"))
+#
+# lock_time_script = IfElseScript(
+#     # if branch
+#     Hashlock256Script(secret_hash,
+#                       P2pkhScript(pubk)),
+#     # else branch
+#     RelativeTimelockScript(  # timelocked script
+#         TimeBasedSequence.from_timedelta(time_delta),  # expiration, 5 blocks
+#         P2pkhScript(pubk2)
+#     )
+# )
+
 print("lock_time_script.type: ", lock_time_script.type)
 print("lock_time_script str: ", str(lock_time_script))
 

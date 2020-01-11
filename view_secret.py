@@ -7,7 +7,7 @@ setup('testnet', strict=True)
 coin_symbol = 'btc-testnet'
 
 # 获取Open交易
-open_tx_hash = '4742ef605b1553f9d8cd400713c8b44d9094d750258e20e60a5dac6d9aed8d29'  # open交易的hash
+open_tx_hash = '05a8a65444a92f6ce1dfc5ac95843903211090356a5b9bb18a9e75173d89cda6'  # open交易的hash
 raw_open_tx = get_raw_tx(open_tx_hash, coin_symbol)
 open_tx = TransactionFactory.unhexlify(raw_open_tx)  # decode raw transaction
 open_tx = open_tx.to_json()
