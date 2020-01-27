@@ -27,7 +27,7 @@ if_solver = IfElseSolver(Branch.IF,  # branch selection
 script = P2pkhScript(pubk)
 
 # 获取commit交易
-to_spend_hash = "1248098d291ec1438f69dff5644e336099cb6eeb0408a20211494412a2145551"
+to_spend_hash = "5a98103afa86f00c54ef8cb971ec5b3ad03404e646c46f006efd654bd46d4073"
 to_spend_raw = get_raw_tx(to_spend_hash, coin_symbol)
 to_spend = TransactionFactory.unhexlify(to_spend_raw)
 
